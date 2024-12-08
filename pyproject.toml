@@ -1,0 +1,35 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "objectify"
+version = "1.0.0"
+authors = [
+    { name = "Andreas Marten Viks", email = "andreasviks0@gmail.com" },
+]
+description = "A package to convert a dictionary to an object to achieve similar syntax and auto-completion as in TypeScript when annotating objects with interfaces."
+readme = "README.md"
+requires-python = ">=3.10"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+dependencies = []
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "hatchling",
+    "build",
+    "twine",
+]
+
+[tool.hatch.build]
+exclude = []
+
+[project.urls]
+"Homepage" = "https://github.com/anviks/dict-to-obj"
+"Issues" = "https://github.com/anviks/dict-to-obj/issues"
+"Changelog" = "https://github.com/anviks/dict-to-obj/blob/master/CHANGELOG.md"
