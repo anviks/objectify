@@ -3,10 +3,10 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "[TBD]"
+name = "objectify"
 version = "1.0.0"
 authors = [
-    { name = "Andreas Marten Viks", email = "andreasviks0@gmail.com" },
+    { name = "Andreas Marten Viks", email = "andreasviks1@gmail.com" },
 ]
 description = "A package to convert a dictionary to an object to achieve similar syntax and auto-completion as in TypeScript when annotating objects with interfaces."
 readme = "README.md"
