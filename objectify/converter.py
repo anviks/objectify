@@ -7,6 +7,8 @@ __all__ = ['dict_to_object']
 
 T = TypeVar('T')
 
+_sentinel = object()
+
 
 def dict_to_object(source_dict: dict[str, Any], target_type: type[T]) -> T:
     """
@@ -34,12 +36,12 @@ def dict_to_object(source_dict: dict[str, Any], target_type: type[T]) -> T:
     :param target_type: The type of the object to create.
     :return:
     """
-    constructor = target_type.__init__
-    assert isinstance(constructor, types.FunctionType | types.WrapperDescriptorType), "Unexpected constructor type."
     target_instance = object.__new__(target_type)
 
     for attr, sub_type in get_type_hints(target_type).items():
-        sub_source = source_dict[attr]
+        sub_source = source_dict.get(attr, getattr(target_instance, attr, _sentinel))
+        if sub_source is _sentinel:
+            raise ValueError(f"Attribute {attr!r} is missing in the source dictionary and the class definition doesn't have a default value for it.")
         sub_instance = transform_element(sub_source, sub_type)
         setattr(target_instance, attr, sub_instance)
 
