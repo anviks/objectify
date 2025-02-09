@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `dict_to_object` function no longer requires target class to have a parameterless (or with default values) constructor.
 - Allow default values in class definitions.
 - Raise an error with a meaningful message if an attribute is missing from source dictionary and has no default value.
+- Excess attributes in the source dictionary now raise an error instead of being ignored.
 
 ## [1.0.0] - 2025-02-09
 

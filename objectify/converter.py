@@ -38,10 +38,18 @@ def dict_to_object(source_dict: dict[str, Any], target_type: type[T]) -> T:
     """
     target_instance = object.__new__(target_type)
 
+    expected_fields = set(get_type_hints(target_type).keys())  # Expected attributes
+    provided_fields = set(source_dict.keys())  # Keys from the input dictionary
+
+    excess_fields = provided_fields - expected_fields
+    if excess_fields:
+        raise ValueError(f"Unexpected fields in the source dictionary: {', '.join(excess_fields)}")
+
     for attr, sub_type in get_type_hints(target_type).items():
         sub_source = source_dict.get(attr, getattr(target_instance, attr, _sentinel))
         if sub_source is _sentinel:
-            raise ValueError(f"Attribute {attr!r} is missing in the source dictionary and the class definition doesn't have a default value for it.")
+            raise ValueError(f"Attribute {attr!r} is missing in the source dictionary "
+                             "and the class definition doesn't have a default value for it.")
         sub_instance = transform_element(sub_source, sub_type)
         setattr(target_instance, attr, sub_instance)
 
