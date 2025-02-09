@@ -1,3 +1,4 @@
+import sys
 from dataclasses import dataclass
 from typing import Any, TypeVar
 
@@ -222,6 +223,10 @@ def test__nested_local_dataclass():
     assert obj.b.c == 'xyz'
 
 
+@pytest.mark.skipif(
+    sys.version_info < (3, 11),
+    reason="Before Python 3.11, 'Test' in list['Test'] does not resolve correctly into a class."
+)
 def test__nested_local_dataclass__with_list():
     @dataclass(init=False)
     class Nested:
