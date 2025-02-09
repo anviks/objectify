@@ -14,13 +14,12 @@ def dict_to_object(source_dict: dict[str, Any], target_type: type[T]) -> T:
 
     This function will create an instance of the specified type and populate its attributes with the values from the
     dictionary. The dictionary keys must match the attribute names of the target type.
-    The target type must have a parameterless constructor (or default values for all parameters).
 
     The following types are supported:
 
     - Primitive types (str, int, float, bool, NoneType)
     - Custom classes (fields have to be defined like in dataclasses)
-    - Dataclasses with init=False
+    - Dataclasses
     - Collection types (list, set, tuple, dict)
     - Nested collections and custom classes
     - Literal types
@@ -36,18 +35,8 @@ def dict_to_object(source_dict: dict[str, Any], target_type: type[T]) -> T:
     :return:
     """
     constructor = target_type.__init__
-
-    if isinstance(constructor, types.FunctionType):
-        code_obj: types.CodeType = constructor.__code__
-        arg_count = code_obj.co_argcount + code_obj.co_kwonlyargcount
-        defaults_count = len(constructor.__defaults__ or ()) + len(constructor.__kwdefaults__ or {})
-        if arg_count - defaults_count != 1:
-            raise TypeError(
-                f"Class {target_type.__qualname__} must have a parameterless constructor (or default values for all parameters).")
-    else:
-        assert isinstance(constructor, types.WrapperDescriptorType), "Unexpected constructor type."
-
-    target_instance = target_type()
+    assert isinstance(constructor, types.FunctionType | types.WrapperDescriptorType), "Unexpected constructor type."
+    target_instance = object.__new__(target_type)
 
     for attr, sub_type in get_type_hints(target_type).items():
         sub_source = source_dict[attr]

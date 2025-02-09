@@ -26,6 +26,24 @@ def test__primitive_types():
     assert obj.e is None
 
 
+def test__convert_to_dataclass_type():
+    @dataclass
+    class Test:
+        a: int
+        b: str
+        c: float
+        d: bool
+        e: None
+
+    obj = dict_to_object({'a': 1, 'b': 'xyz', 'c': 3.0, 'd': True, 'e': None}, Test)
+
+    assert obj.a == 1
+    assert obj.b == 'xyz'
+    assert obj.c == 3.0
+    assert obj.d is True
+    assert obj.e is None
+
+
 def test__convert_to_dataclass_type__no_init():
     @dataclass(init=False)
     class Test:
@@ -178,11 +196,11 @@ def test__fixed_length_tuple_type__invalid(value: tuple[Any, ...], clazz: type[A
 
 
 def test__nested_dataclass():
-    @dataclass(init=False)
+    @dataclass
     class Test:
         a: int
 
-    @dataclass(init=False)
+    @dataclass
     class Nested:
         b: Test
 
@@ -192,11 +210,11 @@ def test__nested_dataclass():
 
 
 def test__nested_dataclass__with_list():
-    @dataclass(init=False)
+    @dataclass
     class Test:
         a: int
 
-    @dataclass(init=False)
+    @dataclass
     class Nested:
         b: list[Test]
 
@@ -208,12 +226,12 @@ def test__nested_dataclass__with_list():
 
 
 def test__nested_local_dataclass():
-    @dataclass(init=False)
+    @dataclass
     class Nested:
         a: int
         b: 'Test'
 
-        @dataclass(init=False)
+        @dataclass
         class Test:
             c: str
 
@@ -228,12 +246,12 @@ def test__nested_local_dataclass():
     reason="Before Python 3.11, 'Test' in list['Test'] does not resolve correctly into a class."
 )
 def test__nested_local_dataclass__with_list():
-    @dataclass(init=False)
+    @dataclass
     class Nested:
         a: int
         b: list['Test']
 
-        @dataclass(init=False)
+        @dataclass
         class Test:
             c: str
 
