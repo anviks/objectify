@@ -1,68 +1,11 @@
-import sys
-from dataclasses import dataclass
-from typing import Any, TypeVar
+from typing import Any
 
 import pytest
 
 from objectify import dict_to_object
 
-T = TypeVar('T')
 
-
-def test__primitive_types():
-    class Test:
-        a: int
-        b: str
-        c: float
-        d: bool
-        e: None
-
-    obj = dict_to_object({'a': 1, 'b': 'xyz', 'c': 3.0, 'd': True, 'e': None}, Test)
-
-    assert obj.a == 1
-    assert obj.b == 'xyz'
-    assert obj.c == 3.0
-    assert obj.d is True
-    assert obj.e is None
-
-
-def test__convert_to_dataclass_type():
-    @dataclass
-    class Test:
-        a: int
-        b: str
-        c: float
-        d: bool
-        e: None
-
-    obj = dict_to_object({'a': 1, 'b': 'xyz', 'c': 3.0, 'd': True, 'e': None}, Test)
-
-    assert obj.a == 1
-    assert obj.b == 'xyz'
-    assert obj.c == 3.0
-    assert obj.d is True
-    assert obj.e is None
-
-
-def test__convert_to_dataclass_type__no_init():
-    @dataclass(init=False)
-    class Test:
-        a: int
-        b: str
-        c: float
-        d: bool
-        e: None
-
-    obj = dict_to_object({'a': 1, 'b': 'xyz', 'c': 3.0, 'd': True, 'e': None}, Test)
-
-    assert obj.a == 1
-    assert obj.b == 'xyz'
-    assert obj.c == 3.0
-    assert obj.d is True
-    assert obj.e is None
-
-
-def test__collection_types():
+def test_collection_types_are_converted_correctly():
     class Test:
         a: list[int]
         b: set[str]
@@ -82,7 +25,7 @@ def test__collection_types():
     assert obj.d == {'x': True, 'y': False}
 
 
-def test__empty_tuple_type__given_empty_tuple():
+def test_empty_tuple_type_accepts_empty_tuple():
     class Test:
         a: tuple[()]
 
@@ -91,7 +34,7 @@ def test__empty_tuple_type__given_empty_tuple():
     assert obj.a == ()
 
 
-def test__empty_tuple_type__given_populated_tuple():
+def test_empty_tuple_type_raises_for_non_empty_tuple():
     class Test:
         a: tuple[()]
 
@@ -116,7 +59,7 @@ def test__empty_tuple_type__given_populated_tuple():
     ((None,), None),
     ((None, None, None), None),
 ])
-def test__variable_length_tuple_type__valid(value: tuple[Any, ...], clazz: type[Any]):
+def test_variable_length_tuple_type_accepts_valid_values(value: tuple[Any, ...], clazz: type[Any]):
     class Test:
         a: tuple[clazz, ...]
 
@@ -139,7 +82,7 @@ def test__variable_length_tuple_type__valid(value: tuple[Any, ...], clazz: type[
     ((True, False, True), None),
     ((None, None, None), int),
 ])
-def test__variable_length_tuple_type__invalid(value: tuple[Any, ...], clazz: type[Any]):
+def test_variable_length_tuple_type_rejects_invalid_values(value: tuple[Any, ...], clazz: type[Any]):
     class Test:
         a: tuple[clazz, ...]
 
@@ -160,7 +103,7 @@ def test__variable_length_tuple_type__invalid(value: tuple[Any, ...], clazz: typ
     ((None, None, None), tuple[None, None, None]),
     ((1, 'abc', 3.0, False, None), tuple[int, str, float, bool, None]),
 ])
-def test__fixed_length_tuple_type__valid(value: tuple[Any, ...], clazz: type[Any]):
+def test_fixed_length_tuple_type_accepts_valid_values(value: tuple[Any, ...], clazz: type[Any]):
     class Test:
         a: clazz
 
@@ -187,7 +130,7 @@ def test__fixed_length_tuple_type__valid(value: tuple[Any, ...], clazz: type[Any
     ((None, None, None), tuple[int, int, int]),
     ((1, 'abc', 3.0, False, None), tuple[int, str, float, str, None]),
 ])
-def test__fixed_length_tuple_type__invalid(value: tuple[Any, ...], clazz: type[Any]):
+def test_fixed_length_tuple_type_rejects_invalid_values(value: tuple[Any, ...], clazz: type[Any]):
     class Test:
         a: clazz
 
@@ -195,78 +138,28 @@ def test__fixed_length_tuple_type__invalid(value: tuple[Any, ...], clazz: type[A
         dict_to_object({'a': value}, Test)
 
 
-def test__nested_dataclass():
-    @dataclass
-    class Test:
-        a: int
-
-    @dataclass
-    class Nested:
-        b: Test
-
-    obj = dict_to_object({'b': {'a': 1}}, Nested)
-
-    assert obj.b.a == 1
-
-
-def test__nested_dataclass__with_list():
-    @dataclass
-    class Test:
-        a: int
-
-    @dataclass
-    class Nested:
-        b: list[Test]
-
-    obj = dict_to_object({'b': [{'a': 1}, {'a': 2}, {'a': 3}]}, Nested)
-
-    assert obj.b[0].a == 1
-    assert obj.b[1].a == 2
-    assert obj.b[2].a == 3
-
-
-def test__nested_local_dataclass():
-    @dataclass
-    class Nested:
-        a: int
-        b: 'Test'
-
-        @dataclass
-        class Test:
-            c: str
-
-    obj = dict_to_object({'a': 1, 'b': {'c': 'xyz'}}, Nested)
-
-    assert obj.a == 1
-    assert obj.b.c == 'xyz'
-
-
-@pytest.mark.skipif(
-    sys.version_info < (3, 11),
-    reason="Before Python 3.11, 'Test' in list['Test'] does not resolve correctly into a class."
-)
-def test__nested_local_dataclass__with_list():
-    @dataclass
-    class Nested:
-        a: int
-        b: list['Test']
-
-        @dataclass
-        class Test:
-            c: str
-
-    obj = dict_to_object({'a': 1, 'b': [{'c': 'xyz'}, {'c': 'abc'}, {'c': '123'}]}, Nested)
-
-    assert obj.a == 1
-    assert obj.b[0].c == 'xyz'
-    assert obj.b[1].c == 'abc'
-    assert obj.b[2].c == '123'
-
-
-def test__nested_list():
+def test_nested_list_is_converted_correctly():
     class Test:
         a: list[list[int]]
 
     obj = dict_to_object({'a': [[1, 2, 3], [4, 5, 6], [7, 8, 9]]}, Test)
 
     assert obj.a == [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
+
+
+def test_nested_set_is_converted_correctly():
+    class Test:
+        a: list[set[str]]
+
+    obj = dict_to_object({'a': [{'a', 'b', 'c'}, {'d', 'e', 'f'}, {'g', 'h', 'i'}]}, Test)
+
+    assert obj.a == [{'a', 'b', 'c'}, {'d', 'e', 'f'}, {'g', 'h', 'i'}]
+
+
+def test_nested_tuple_is_converted_correctly():
+    class Test:
+        a: tuple[tuple[int, float], tuple[float, str]]
+
+    obj = dict_to_object({'a': [(1, 2.0), (3.0, '4.0')]}, Test)
+
+    assert obj.a == ((1, 2.0), (3.0, '4.0'))
