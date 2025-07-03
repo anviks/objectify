@@ -54,48 +54,33 @@ def dict_to_object(source_dict: dict[str, Any], target_type: type[T]) -> T:
 
 
 def handle_collection(source: Collection[Any], collection_type: type):
-    result_collection = collection_type()
     origin = get_origin(collection_type)
-    target_type_args = get_args(collection_type)
+    type_args = get_args(collection_type)
 
     if issubclass(origin, list):
-        element_type = target_type_args[0]
-
-        for source_value in source:
-            converted_value = transform_element(source_value, element_type)
-            result_collection.append(converted_value)
+        return [transform_element(item, type_args[0]) for item in source]
 
     elif issubclass(origin, tuple):
-        if len(target_type_args) == 2 and target_type_args[1] is Ellipsis:
-            element_type = target_type_args[0]
-
-            for source_value in source:
-                converted_value = transform_element(source_value, element_type)
-                result_collection += (converted_value,)
-
+        if len(type_args) == 2 and type_args[1] is Ellipsis:
+            return tuple(transform_element(item, type_args[0]) for item in source)
         else:
-            for element_type, source_value in zip(target_type_args, source, strict=True):
-                converted_value = transform_element(source_value, element_type)
-                result_collection += (converted_value,)
+            return tuple(
+                transform_element(source_value, element_type)
+                for element_type, source_value in zip(type_args, source, strict=True)
+            )
 
     elif issubclass(origin, set):
-        element_type = target_type_args[0]
-
-        for source_value in source:
-            converted_value = transform_element(source_value, element_type)
-            result_collection.add(converted_value)
+        return {transform_element(item, type_args[0]) for item in source}
 
     elif issubclass(origin, dict):
-        key_type, value_type = target_type_args
+        key_type, value_type = type_args
         assert isinstance(source, dict)
+        return {
+            transform_element(k, key_type): transform_element(v, value_type)
+            for k, v in source.items()
+        }
 
-        for key_source, value_source in source.items():
-            key_instance = transform_element(key_source, key_type)
-            value_instance = transform_element(value_source, value_type)
-
-            result_collection[key_instance] = value_instance
-
-    return result_collection
+    raise TypeError(f"Unsupported collection type: {collection_type}.")
 
 
 def handle_literal(value: Any, literal_type: type):
