@@ -26,9 +26,6 @@ def dict_to_object(source_dict: dict[str, Any], target_type: type[T]) -> T:
     - Nested collections and custom classes
     - Literal types
     - Type aliases, including TypeAliasType (Python 3.12+)
-
-    The following types are not supported:
-
     - Union types
     - Optional types
 
@@ -110,16 +107,22 @@ def transform_element(sub_source: Collection[Any], sub_type: type):
 
     sub_origin = get_origin(sub_type) or sub_type
 
-    if sub_origin in (typing.Union, types.UnionType):
-        raise TypeError("Union and Optional types are not supported.")
-
     if sub_origin is Literal:
         if sub_source not in get_args(sub_type):
             raise ValueError(f"Value {sub_source} is not a valid literal for type {sub_type}.")
         sub_instance = sub_source
+    elif sub_origin in (typing.Union, types.UnionType):
+        for type_ in get_args(sub_type):
+            try:
+                sub_instance = transform_element(sub_source, type_)
+                break
+            except (AssertionError, TypeError, ValueError):
+                continue
+        else:
+            raise TypeError(f"The value `{sub_source}` does not match any of the types in `{sub_type}`.")
     elif is_collection_type(sub_origin):
         sub_instance = handle_collection(sub_source, sub_type)
-    elif is_primitive_type(sub_type):
+    elif is_primitive_type(sub_origin):
         assert isinstance(sub_source, sub_type)
         sub_instance = sub_source
     else:
