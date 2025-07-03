@@ -42,99 +42,103 @@ def dict_to_object(source_dict: dict[str, Any], target_type: type[T]) -> T:
     if excess_fields:
         raise ValueError(f"Unexpected fields in the source dictionary: {', '.join(excess_fields)}")
 
-    for attr, sub_type in get_type_hints(target_type).items():
-        sub_source = source_dict.get(attr, getattr(target_instance, attr, _sentinel))
-        if sub_source is _sentinel:
+    for attr, expected_type in get_type_hints(target_type).items():
+        raw_field_value = source_dict.get(attr, getattr(target_instance, attr, _sentinel))
+        if raw_field_value is _sentinel:
             raise ValueError(f"Attribute {attr!r} is missing in the source dictionary "
                              "and the class definition doesn't have a default value for it.")
-        sub_instance = transform_element(sub_source, sub_type)
-        setattr(target_instance, attr, sub_instance)
+        converted_value = transform_element(raw_field_value, expected_type)
+        setattr(target_instance, attr, converted_value)
 
     return target_instance
 
 
-def handle_collection(source_collection: Collection[Any], _type: type):
-    collection = _type()
-    origin = get_origin(_type)
-    type_args = get_args(_type)
+def handle_collection(source: Collection[Any], collection_type: type):
+    result_collection = collection_type()
+    origin = get_origin(collection_type)
+    target_type_args = get_args(collection_type)
 
     if issubclass(origin, list):
-        sub_type = type_args[0]
+        element_type = target_type_args[0]
 
-        for sub_source in source_collection:
-            sub_instance = transform_element(sub_source, sub_type)
-            collection.append(sub_instance)
+        for source_value in source:
+            converted_value = transform_element(source_value, element_type)
+            result_collection.append(converted_value)
 
     elif issubclass(origin, tuple):
-        if len(type_args) == 2 and type_args[1] is Ellipsis:
-            sub_type = type_args[0]
+        if len(target_type_args) == 2 and target_type_args[1] is Ellipsis:
+            element_type = target_type_args[0]
 
-            for sub_source in source_collection:
-                sub_instance = transform_element(sub_source, sub_type)
-                collection += (sub_instance,)
+            for source_value in source:
+                converted_value = transform_element(source_value, element_type)
+                result_collection += (converted_value,)
 
         else:
-            for sub_type, sub_source in zip(type_args, source_collection, strict=True):
-                sub_instance = transform_element(sub_source, sub_type)
-                collection += (sub_instance,)
+            for element_type, source_value in zip(target_type_args, source, strict=True):
+                converted_value = transform_element(source_value, element_type)
+                result_collection += (converted_value,)
 
     elif issubclass(origin, set):
-        sub_type = type_args[0]
+        element_type = target_type_args[0]
 
-        for sub_source in source_collection:
-            sub_instance = transform_element(sub_source, sub_type)
-            collection.add(sub_instance)
+        for source_value in source:
+            converted_value = transform_element(source_value, element_type)
+            result_collection.add(converted_value)
 
     elif issubclass(origin, dict):
-        key_type, value_type = type_args
-        assert isinstance(source_collection, dict)
+        key_type, value_type = target_type_args
+        assert isinstance(source, dict)
 
-        for key_source, value_source in source_collection.items():
+        for key_source, value_source in source.items():
             key_instance = transform_element(key_source, key_type)
             value_instance = transform_element(value_source, value_type)
 
-            collection[key_instance] = value_instance
+            result_collection[key_instance] = value_instance
 
-    return collection
+    return result_collection
 
 
-def transform_element(sub_source: Collection[Any], sub_type: type):
-    if sys.version_info >= (3, 12) and isinstance(sub_type, typing.TypeAliasType):  # novermin
-        sub_type = sub_type.__value__
+def handle_literal(value: Any, literal_type: type):
+    if value not in get_args(literal_type):
+        raise ValueError(f"Value {value} is not a valid literal for type {literal_type}.")
+    return value
 
-    if sub_type is None:
-        sub_type = types.NoneType
 
-    sub_origin = get_origin(sub_type) or sub_type
+def handle_union(value: Any, union_type: type):
+    for candidate_type in get_args(union_type):
+        try:
+            return transform_element(value, candidate_type)
+        except (AssertionError, TypeError, ValueError):
+            continue
+    raise TypeError(f"The value `{value}` does not match any of the types in `{union_type}`.")
 
-    if sub_origin is Literal:
-        if sub_source not in get_args(sub_type):
-            raise ValueError(f"Value {sub_source} is not a valid literal for type {sub_type}.")
-        sub_instance = sub_source
-    elif sub_origin in (typing.Union, types.UnionType):
-        for type_ in get_args(sub_type):
-            try:
-                sub_instance = transform_element(sub_source, type_)
-                break
-            except (AssertionError, TypeError, ValueError):
-                continue
-        else:
-            raise TypeError(f"The value `{sub_source}` does not match any of the types in `{sub_type}`.")
-    elif is_collection_type(sub_origin):
-        sub_instance = handle_collection(sub_source, sub_type)
-    elif is_primitive_type(sub_origin):
-        assert isinstance(sub_source, sub_type)
-        sub_instance = sub_source
+
+def transform_element(raw_value: Any, target_type: type[T]) -> T:
+    if sys.version_info >= (3, 12) and isinstance(target_type, typing.TypeAliasType):  # novermin
+        target_type = target_type.__value__
+
+    if target_type is None:
+        target_type = types.NoneType
+
+    target_type_origin = get_origin(target_type) or target_type
+
+    if target_type_origin is Literal:
+        return handle_literal(raw_value, target_type)
+    elif target_type_origin in (typing.Union, types.UnionType):
+        return handle_union(raw_value, target_type)
+    elif is_collection_type(target_type_origin):
+        return handle_collection(raw_value, target_type)
+    elif is_primitive_type(target_type_origin):
+        assert isinstance(raw_value, target_type)
+        return raw_value
     else:
-        assert isinstance(sub_source, dict)
-        sub_instance = dict_to_object(sub_source, sub_type)
-
-    return sub_instance
+        assert isinstance(raw_value, dict)
+        return dict_to_object(raw_value, target_type)
 
 
 def is_collection_type(origin: type):
     return issubclass(origin, list | set | tuple | dict)
 
 
-def is_primitive_type(_type: type):
-    return issubclass(_type, str | int | float | bool | types.NoneType)
+def is_primitive_type(type_: type):
+    return issubclass(type_, str | int | float | bool | types.NoneType)
