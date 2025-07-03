@@ -8,11 +8,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Allow default values in class definitions.
+- `Union` and `Optional` types are now supported, allowing for more flexible type definitions.
+
 ### Changed
 - `dict_to_object` function no longer requires target class to have a parameterless (or with default values) constructor.
-- Allow default values in class definitions.
-- Raise an error with a meaningful message if an attribute is missing from source dictionary and has no default value.
-- `Union` and `Optional` types are now supported, allowing for more flexible type definitions.
+- An error with a meaningful message is now raised if an attribute is missing from source dictionary and has no default value.
 
 ## [1.0.0] - 2025-02-09
 
