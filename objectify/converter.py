@@ -95,7 +95,7 @@ def handle_union(value: Any, union_type: type):
             return transform_element(value, candidate_type)
         except (AssertionError, TypeError, ValueError):
             continue
-    raise TypeError(f"The value `{value}` does not match any of the types in `{union_type}`.")
+    raise TypeError(f"`{value}` does not match any of: {get_args(union_type)}.")
 
 
 def transform_element(raw_value: Any, target_type: type[T]) -> T:
