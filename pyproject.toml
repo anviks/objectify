@@ -30,6 +30,6 @@ dev = [
 exclude = []
 
 [project.urls]
-"Homepage" = "https://github.com/anviks/dict-to-obj"
-"Issues" = "https://github.com/anviks/dict-to-obj/issues"
-"Changelog" = "https://github.com/anviks/dict-to-obj/blob/master/CHANGELOG.md"
+"Homepage" = "https://github.com/anviks/objectify"
+"Issues" = "https://github.com/anviks/objectify/issues"
+"Changelog" = "https://github.com/anviks/objectify/blob/main/CHANGELOG.md"
