@@ -2,8 +2,8 @@ name: Python Package Release
 
 on:
   push:
-    tags:
-      - 'v*.*.*'
+#    tags:
+#      - 'v*.*.*'
 
 jobs:
   release:
@@ -29,8 +29,8 @@ jobs:
       - name: Build package
         run: python -m build
 
-      - name: Publish to PyPI
-        uses: pypa/gh-action-pypi-publish@release/v1
+#      - name: Publish to PyPI
+#        uses: pypa/gh-action-pypi-publish@release/v1
 
       - name: Extract latest changelog entry (without version header)
         run: |
@@ -42,6 +42,9 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:
+          files: |
+            dist/*.whl
+            dist/*.tar.gz
           tag_name: ${{ github.ref_name }}
           name: ${{ env.VERSION }}
           body_path: "latest_changelog.md"
