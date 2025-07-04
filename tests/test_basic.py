@@ -66,10 +66,12 @@ def test_missing_required_fields_raises_exception():
         dict_to_object({'c': 3.0, 'd': True, 'e': None}, Test)
 
 
-def test_extra_fields_raises_exception():
-    """Fails because 'extra' is not defined in Test."""
-    with pytest.raises(Exception):
-        dict_to_object({'a': 1, 'b': 'xyz', 'c': 3.0, 'd': True, 'e': None, 'extra': 'unexpected'}, Test)
+def test_extra_fields_are_ignored():
+    """Ignores extra field and doesn't raise an error."""
+    obj = dict_to_object({'a': 1, 'b': 'xyz', 'c': 3.0, 'd': True, 'e': None, 'extra': 'unexpected'}, Test)
+    assert obj.a == 1
+    assert isinstance(obj, Test)
+    assert not hasattr(obj, 'extra')
 
 
 def test_wrong_types_raises_exception():
