@@ -2,8 +2,8 @@ name: Python Package Release
 
 on:
   push:
-#    tags:
-#      - 'v*.*.*'
+    tags:
+      - 'v*.*.*'
 
 jobs:
   release:
