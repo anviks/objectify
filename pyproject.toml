@@ -21,9 +21,6 @@ dependencies = []
 [project.optional-dependencies]
 dev = [
     "pytest",
-    "hatchling",
-    "build",
-    "twine",
 ]
 
 [tool.hatch.build]
