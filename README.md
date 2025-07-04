@@ -21,6 +21,7 @@ By leveraging objectify, you can easily map such data to Python objects while ma
 - **Dataclasses**: Objectify works seamlessly with dataclasses, providing a simple way to convert dictionaries to dataclass objects.
 - **Nested Objects**: Objectify can handle nested dictionaries and convert them to nested objects.
 - **Literal Types**: Objectify supports `Literal` types for specifying exact values that an attribute can take.
+- **Default Values**: Objectify allows defining default values for attributes in class definitions, making it easier to handle optional fields.
 - **Union and Optional**: Objectify supports `Union` and `Optional` types, allowing for flexible type definitions.
 - **Error Handling**: Objectify raises `TypeError` for mismatched types and invalid literal values.
 
